@@ -23,7 +23,7 @@ public class TopicService {
 	public AmazonSNSClient snsClient;
 
 	private TopicService() {
-		snsClient = new AmazonSNSClient(new ProfileCredentialsProvider("default").getCredentials());
+		snsClient = new AmazonSNSClient();
 		snsClient.setRegion(Region.getRegion(Regions.US_WEST_2));
 
 	}
