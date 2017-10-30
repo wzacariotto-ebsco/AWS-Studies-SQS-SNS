@@ -32,8 +32,9 @@ public class QueueService {
 	public AmazonSQSClient sqs;
 
 	private QueueService() {
-		sqs = new AmazonSQSClient(new ProfileCredentialsProvider("default").getCredentials());
+		sqs = new AmazonSQSClient();
 		sqs.setRegion(Region.getRegion(Regions.US_EAST_1));
+//		sqs.setEndpoint("http://localhost:9324");
 	}
 
 	public static QueueService getInstance() {
@@ -52,7 +53,7 @@ public class QueueService {
 			queue.setUrl(queueURL);
 		} else {
 			// Create a FIFO queue
-			System.out.println("Creating a new Amazon SQS FIFO queue called MyFifoQueue.fifo.\n");
+			System.out.println("Creating a new Amazon SQS FIFO queue called "+queue.getName()+".fifo.\n");
 			Map<String, String> attributes = new HashMap<String, String>();
 			// A FIFO queue must have the FifoQueue attribute set to True
 			attributes.put("FifoQueue", "true");

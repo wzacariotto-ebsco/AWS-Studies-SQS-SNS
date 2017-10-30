@@ -8,7 +8,7 @@ public class TopicQueueService {
 
 	public void subscribeQueueToTopic(Topic topic, Queue queue) throws Exception {
 		
-		Topics.subscribeQueue(TopicService.getInstance().snsClient,QueueService.getInstance().sqs,topic.getArn(),queue.getUrl());
+		Topics.subscribeQueue(TopicService.getInstance().sns,QueueService.getInstance().sqs,topic.getArn(),queue.getUrl());
 		System.out.println("Queue subscribed to Topic");
 	}
 }

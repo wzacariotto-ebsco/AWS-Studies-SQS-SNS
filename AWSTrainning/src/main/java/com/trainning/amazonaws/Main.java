@@ -15,10 +15,14 @@ public class Main {
 	public static void main(String[] args) throws Exception {
 		Scanner sc = new Scanner(System.in);
 		int menuOpt = 0;
-		while (menuOpt != 8) {
+		while (menuOpt != 10) {
 			System.out.println("What do you want to do?\n1 - Topic Flow\n2 - Queue Stardard Flow\n3 - Queue FiFo Flow\n"
-					+ "4 - Delete Queues, Queues Messages and Topics\n5 - Subscribe Queue To a Topic\n6 - Create Queue with Dead Letter\n7 - List Topics and Queues\n8 - Leave");
-			menuOpt = sc.nextInt();
+					+ "4 - Delete Queues, Queues Messages and Topics\n5 - Subscribe Queue To a Topic\n6 - Create Queue with "
+					+ "Dead Letter\n7 - List Topics and Queues\n8 - Publish to Topic by arn\n9 - List Subscription\n10 - Leave");
+			try {
+				menuOpt = sc.nextInt();
+			} catch (Exception e) {
+			}
 			switch (menuOpt) {
 			case 1: {
 				// Create topic
@@ -42,22 +46,7 @@ public class Main {
 				TopicService.getInstance().subscribeToTopic(topic, protocol, contact);
 				System.out.println("Subscribe created");
 				// Publish
-
-				String msg = null;
-				while (msg == null || msg == "") {
-					msg = sc.nextLine();
-				}
-				System.out.println("Type the subject to push into topic: ");
-				String subject = null;
-				while (subject == null || msg == "") {
-					subject = sc.nextLine();
-				}
-				System.out.println("Type the message to push into topic: ");
-				msg = null;
-				while (msg == null || msg == "") {
-					msg = sc.nextLine();
-				}
-				TopicService.getInstance().publishTopic(topic, msg, subject);
+				topicPublisherCall(sc, topic);
 				System.out.println("Message published");
 				break;
 			}
@@ -66,6 +55,7 @@ public class Main {
 				Queue queue = new Queue();
 				queue.setQueueType(QueueType.STANDARD);
 				queueFlow(sc, queue);
+				System.out.println();
 				break;
 			}
 			case 3: {
@@ -73,6 +63,7 @@ public class Main {
 				Queue queue = new Queue();
 				queue.setQueueType(QueueType.FIFO);
 				queueFlow(sc, queue);
+				System.out.println();
 				break;
 			}
 			case 4: {
@@ -134,6 +125,27 @@ public class Main {
 				break;
 			}
 			case 8: {
+				System.out.println("Type your topic arn: ");
+				String topicArn = null;
+				while (topicArn == null) {
+					topicArn = sc.next();
+				}
+				Topic topic = new Topic();
+				topic.setArn(topicArn);
+				topicPublisherCall(sc, topic);
+				break;
+			}
+			case 9: {
+				System.out.println("Type your Topic Arn: ");
+				String topicArn = null;
+				while (topicArn == null) {
+					topicArn = sc.next();
+				}
+				TopicService.getInstance().listSubsciption(topicArn);
+				System.out.println();
+				break;
+			}
+			case 10: {
 				sc.close();
 				System.out.println("Thanks, see ya!");
 				break;
@@ -141,6 +153,24 @@ public class Main {
 			}
 		}
 
+	}
+
+	private static void topicPublisherCall(Scanner sc, Topic topic) {
+		String msg = null;
+		while (msg == null || msg == "") {
+			msg = sc.nextLine();
+		}
+		System.out.println("Type the subject to push into topic: ");
+		String subject = null;
+		while (subject == null || msg == "") {
+			subject = sc.nextLine();
+		}
+		System.out.println("Type the message to push into topic: ");
+		msg = null;
+		while (msg == null || msg == "") {
+			msg = sc.nextLine();
+		}
+		TopicService.getInstance().publishTopic(topic, msg, subject);
 	}
 
 	private static void queueFlow(Scanner sc, Queue queue) {
@@ -161,5 +191,4 @@ public class Main {
 		// Recieve
 		QueueService.getInstance().recievedMessageFromQueue(standardQueue);
 	}
-
 }
