@@ -7,9 +7,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
+import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.DeleteMessageRequest;
@@ -29,12 +31,20 @@ public class QueueService {
 
 	private static QueueService instance;
 
-	public AmazonSQSClient sqs;
+	public AmazonSQS sqs;
 
 	private QueueService() {
-		sqs = new AmazonSQSClient();
-		sqs.setRegion(Region.getRegion(Regions.US_EAST_1));
-//		sqs.setEndpoint("http://localhost:9324");
+		AWSCredentialsProvider credentials = null;
+		try {
+			credentials = new ProfileCredentialsProvider();
+		} catch (Exception e) {
+			throw new AmazonClientException("Can't load the credentials from the credential profiles file. "
+					+ "Please make sure that your credentials file is at the correct "
+					+ "location (~/.aws/credentials), and is a in valid format.", e);
+		}
+		sqs = AmazonSQSClient.builder()//.withRegion("us-east-1")
+				 .withEndpointConfiguration(new EndpointConfiguration("http://localhost:4576", "us-east-1"))
+				.withCredentials(credentials).build();
 	}
 
 	public static QueueService getInstance() {
@@ -47,7 +57,7 @@ public class QueueService {
 	public Queue createQueue(Queue queue) {
 		// Create a queue
 		if (QueueType.STANDARD.equals(queue.getQueueType())) {
-			System.out.println("Creating a new SQS queue called" + queue.getName() + " .\n");
+			System.out.println("Creating a new SQS queue called" + queue.getName());
 			CreateQueueRequest createQueueRequest = new CreateQueueRequest().withQueueName(queue.getName());
 			String queueURL = sqs.createQueue(createQueueRequest).getQueueUrl();
 			queue.setUrl(queueURL);
@@ -68,6 +78,7 @@ public class QueueService {
 		}
 		if (queue.getQueueDeadLetter() != null)
 			createDeadLetterQueue(queue.getQueueDeadLetter());
+		System.out.println("Queue Created ID: "+queue.getUrl()+"\n");
 		return queue;
 	}
 
@@ -128,7 +139,7 @@ public class QueueService {
 
 	// Receive messages
 	public List<Message> recievedMessageFromQueue(Queue queue) {
-		System.out.println("Receiving messages from MyQueue.\n");
+		System.out.println("Receiving messages from MyQueue " + queue.getUrl() + " .\n");
 		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queue.getUrl());
 		List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
 		for (Message message : messages) {
@@ -143,6 +154,7 @@ public class QueueService {
 				System.out.println("    Value: " + entry.getValue());
 			}
 		}
+		System.out.println();
 		return messages;
 	}
 

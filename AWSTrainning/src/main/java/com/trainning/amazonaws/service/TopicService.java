@@ -1,12 +1,13 @@
 package com.trainning.amazonaws.service;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
+import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sns.model.CreateTopicRequest;
 import com.amazonaws.services.sns.model.CreateTopicResult;
@@ -16,19 +17,26 @@ import com.amazonaws.services.sns.model.ListTopicsResult;
 import com.amazonaws.services.sns.model.PublishRequest;
 import com.amazonaws.services.sns.model.PublishResult;
 import com.amazonaws.services.sns.model.SubscribeRequest;
-import com.amazonaws.services.sns.model.Subscription;
 import com.trainning.amazonaws.domain.Topic;
 
 public class TopicService {
 
 	private static TopicService instance;
 
-	public AmazonSNSClient sns;
+	public AmazonSNS sns;
 
 	private TopicService() {
-		sns = new AmazonSNSClient(new ProfileCredentialsProvider("default").getCredentials());
-		sns.setRegion(Region.getRegion(Regions.US_EAST_1));
-		// sns.setEndpoint("localhost:9292");
+		AWSCredentialsProvider credentials = null;
+		try {
+			credentials = new ProfileCredentialsProvider();
+		} catch (Exception e) {
+			throw new AmazonClientException("Can't load the credentials from the credential profiles file. "
+					+ "Please make sure that your credentials file is at the correct "
+					+ "location (~/.aws/credentials), and is a in valid format.", e);
+		}
+		sns = AmazonSNSClient.builder()//.withRegion("us-east-1")
+				 .withEndpointConfiguration(new EndpointConfiguration("http://localhost:4575", "us-east-1"))
+				.withCredentials(credentials).build();
 	}
 
 	public static TopicService getInstance() {
@@ -47,7 +55,7 @@ public class TopicService {
 		Topic topic = new Topic();
 		topic.setArn(topicArn);
 		topic.setName(topicName);
-		System.out.println("Topic Created. Arn: " + topicArn);
+		System.out.println("Topic Created. Arn: " + topicArn+"\n");
 		return topic;
 	}
 
@@ -67,7 +75,7 @@ public class TopicService {
 		PublishRequest publishRequest = new PublishRequest(topic.getArn(), msg, subject);
 		PublishResult publishResult = sns.publish(publishRequest);
 		// print MessageId of message published to SNS topic
-		System.out.println("MessageId - " + publishResult.getMessageId());
+		System.out.println("MessageId - " + publishResult.getMessageId()+"\n");
 	}
 
 	public void deleteTopic(Topic topic) {

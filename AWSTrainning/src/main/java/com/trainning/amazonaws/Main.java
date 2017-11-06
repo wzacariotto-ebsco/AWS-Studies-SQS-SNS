@@ -15,10 +15,11 @@ public class Main {
 	public static void main(String[] args) throws Exception {
 		Scanner sc = new Scanner(System.in);
 		int menuOpt = 0;
-		while (menuOpt != 10) {
+		while (menuOpt != 12) {
 			System.out.println("What do you want to do?\n1 - Topic Flow\n2 - Queue Stardard Flow\n3 - Queue FiFo Flow\n"
 					+ "4 - Delete Queues, Queues Messages and Topics\n5 - Subscribe Queue To a Topic\n6 - Create Queue with "
-					+ "Dead Letter\n7 - List Topics and Queues\n8 - Publish to Topic by arn\n9 - List Subscription\n10 - Leave");
+					+ "Dead Letter\n7 - List Topics and Queues\n8 - Publish to Topic by arn\n9 - List Subscription\n10 - Create "
+					+ "Queue named Megalodon-Queue\n11 - Create Topic named Megalodon-Topic\n12 - Leave");
 			try {
 				menuOpt = sc.nextInt();
 			} catch (Exception e) {
@@ -121,7 +122,10 @@ public class Main {
 			}
 			case 7: {
 				TopicService.getInstance().listTopics();
-				QueueService.getInstance().listQueues();
+				Set<Queue> listQueues = QueueService.getInstance().listQueues();
+				listQueues.forEach(queueAws -> {
+					QueueService.getInstance().recievedMessageFromQueue(queueAws);
+				});
 				break;
 			}
 			case 8: {
@@ -146,6 +150,30 @@ public class Main {
 				break;
 			}
 			case 10: {
+				System.out.println("Creating Queue");
+				Queue queue = new Queue();
+				queue.setName("queue-name");
+				queue.setQueueType(QueueType.FIFO);
+				QueueService.getInstance().createQueue(queue);
+				String msg="{\r\n" + 
+						"  \"type\":\"object\",\r\n" + 
+						"  \"author\":\"wendler\",\r\n" + 
+						"  \"name\":\"Things\"\r\n" + 
+						"},\r\n" + 
+						"{\r\n" + 
+						"  \"type\":\"object2\",\r\n" + 
+						"  \"author\":\"montanboy\",\r\n" + 
+						"  \"name\":\"ThingsForYou\"\r\n" + 
+						"}";
+				QueueService.getInstance().sendMessageToQueue(queue, msg);
+				break;
+			}
+			case 11: {
+				System.out.println("Creating Megalodon-Topic");
+				TopicService.getInstance().createTopic("Megalodon-Topic");
+				break;
+			}
+			case 12: {
 				sc.close();
 				System.out.println("Thanks, see ya!");
 				break;
