@@ -34,8 +34,8 @@ public class TopicService {
 					+ "Please make sure that your credentials file is at the correct "
 					+ "location (~/.aws/credentials), and is a in valid format.", e);
 		}
-		sns = AmazonSNSClient.builder()//.withRegion("us-east-1")
-				 .withEndpointConfiguration(new EndpointConfiguration("http://localhost:4575", "us-east-1"))
+		sns = AmazonSNSClient.builder().withRegion("us-east-1")
+//				 .withEndpointConfiguration(new EndpointConfiguration("http://localhost:4575", "us-east-1"))
 				.withCredentials(credentials).build();
 	}
 

@@ -42,8 +42,8 @@ public class QueueService {
 					+ "Please make sure that your credentials file is at the correct "
 					+ "location (~/.aws/credentials), and is a in valid format.", e);
 		}
-		sqs = AmazonSQSClient.builder()//.withRegion("us-east-1")
-				 .withEndpointConfiguration(new EndpointConfiguration("http://localhost:4576", "us-east-1"))
+		sqs = AmazonSQSClient.builder().withRegion("us-east-1")
+//				 .withEndpointConfiguration(new EndpointConfiguration("http://localhost:4576", "us-east-1"))
 				.withCredentials(credentials).build();
 	}
 
@@ -77,28 +77,29 @@ public class QueueService {
 			queue.setUrl(queueURL);
 		}
 		if (queue.getQueueDeadLetter() != null)
-			createDeadLetterQueue(queue.getQueueDeadLetter());
+			createDeadLetterQueue(queue);
 		System.out.println("Queue Created ID: "+queue.getUrl()+"\n");
 		return queue;
 	}
 
-	public void createDeadLetterQueue(QueueDeadLetter queue) {
-		String queueLetterName = queue.getName();
+	public void createDeadLetterQueue(Queue queue) {
+		String queueLetterName = queue.getQueueDeadLetter().getName();
 		System.out.println("Creating Dead Letter Queue named :" + queueLetterName);
-		queue.setUrl(sqs.createQueue(queueLetterName).getQueueUrl());
+		queue.getQueueDeadLetter().setUrl(sqs.createQueue(queueLetterName).getQueueUrl());
 		GetQueueAttributesResult queue_attrs = sqs
-				.getQueueAttributes(new GetQueueAttributesRequest(queue.getUrl()).withAttributeNames("QueueArn"));
+				.getQueueAttributes(new GetQueueAttributesRequest(queue.getQueueDeadLetter().getUrl()).withAttributeNames("QueueArn"));
 
 		String dlQueueArn = queue_attrs.getAttributes().get("QueueArn");
 
 		// Set dead letter queue with redrive policy on source queue.
-		String srcQueueUrl = sqs.getQueueUrl(queueLetterName).getQueueUrl();
-
-		SetQueueAttributesRequest request = new SetQueueAttributesRequest().withQueueUrl(srcQueueUrl)
-				.addAttributesEntry("RedrivePolicy",
-						"{\"maxReceiveCount\":\"5\", \"deadLetterTargetArn\":\"" + dlQueueArn + "\"}");
+		Map<String,String> attributes = new HashMap<String,String>(); 
+		attributes.put("RedrivePolicy", "{\"maxReceiveCount\":\"2\", \"deadLetterTargetArn\":\"" + dlQueueArn + "\"}");
+		SetQueueAttributesRequest request = new SetQueueAttributesRequest(queue.getUrl(),attributes);
 
 		sqs.setQueueAttributes(request);
+		sqs.createQueue(queue.getName());
+		sqs
+        .getQueueAttributes(new GetQueueAttributesRequest(queue.getUrl()).withAttributeNames("RedrivePolicy"));
 	}
 
 	public Set<Queue> listQueues() {
@@ -124,7 +125,7 @@ public class QueueService {
 		}
 		// FIFO Queue
 		System.out.println("Sending a message to Queue.\n");
-		SendMessageRequest sendMessageRequest = new SendMessageRequest(queue.getUrl(), msg);
+		SendMessageRequest sendMessageRequest = new SendMessageRequest(createQueue(queue).getUrl(), msg);
 		// You must provide a non-empty MessageGroupId when sending messages to a FIFO
 		// queue
 		sendMessageRequest.setMessageGroupId("messageGroup1");
